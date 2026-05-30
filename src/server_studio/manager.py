@@ -46,6 +46,7 @@ class ServerManager:
             java_runtime=f"temurin-{result.java_major}",
             ram_mb=ram_mb,
             port=port,
+            launch_args=result.launch_args,
         )
         cfg.save(server_dir / "server.json")
         return cfg
@@ -77,9 +78,7 @@ class ServerManager:
             str(java),
             f"-Xmx{cfg.ram_mb}M",
             f"-Xms{min(cfg.ram_mb, 1024)}M",
-            "-jar",
-            "server.jar",
-            "nogui",
+            *cfg.launch_args,
         ]
         proc = self._process_factory(command, server_dir, on_output)
         proc.start()

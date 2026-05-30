@@ -16,6 +16,7 @@ class FakeInstaller:
 
         class _R:
             java_major = 21
+            launch_args = ["-jar", "server.jar", "nogui"]
         return _R()
 
 

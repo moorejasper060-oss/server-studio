@@ -18,6 +18,7 @@ class ServerConfig:
     ram_mb: int = 2048
     port: int = 25565
     installed_content: list[dict] = field(default_factory=list)
+    launch_args: list[str] = field(default_factory=lambda: ["-jar", "server.jar", "nogui"])
 
     def to_dict(self) -> dict:
         return asdict(self)

@@ -24,6 +24,13 @@ def test_run_sync_without_on_error_swallows():
 def test_async_runner_runs_and_emits(qtbot):
     runner = AsyncRunner()
     got = []
-    with qtbot.waitSignal(runner._signals.done, timeout=2000):
-        runner(lambda: 7, got.append)
+    runner(lambda: 7, got.append)
     qtbot.waitUntil(lambda: got == [7], timeout=2000)
+
+
+def test_async_runner_two_calls_do_not_crossfire(qtbot):
+    runner = AsyncRunner()
+    a, b = [], []
+    runner(lambda: "A", a.append)
+    runner(lambda: "B", b.append)
+    qtbot.waitUntil(lambda: a == ["A"] and b == ["B"], timeout=2000)

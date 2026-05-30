@@ -1,3 +1,4 @@
+# src/server_studio/ui/async_runner.py
 from __future__ import annotations
 
 from typing import Callable
@@ -37,23 +38,25 @@ class _Worker(QThread):
 
 
 class AsyncRunner:
-    """Runs fn() on a QThread; delivers on_done/on_error on the UI thread via signals."""
+    """Runs fn() on a QThread; delivers on_done/on_error on the UI thread via signals.
+
+    Each call gets its own signals object, so callbacks never accumulate or cross-fire
+    when one AsyncRunner instance is shared across the app.
+    """
 
     def __init__(self):
-        self._signals = _Signals()
-        self._threads: list[_Worker] = []
+        self._active: list = []  # keep (worker, signals) alive until completion
 
     def __call__(self, fn, on_done, on_error=None) -> None:
-        signals = self._signals  # reuse so tests can capture runner._signals.done before calling
+        signals = _Signals()
         worker = _Worker(fn, signals)
         signals.done.connect(on_done)
         if on_error:
             signals.failed.connect(on_error)
         signals.done.connect(lambda *_: self._cleanup(worker))
         signals.failed.connect(lambda *_: self._cleanup(worker))
-        self._threads.append(worker)
+        self._active.append((worker, signals))
         worker.start()
 
     def _cleanup(self, worker) -> None:
-        if worker in self._threads:
-            self._threads.remove(worker)
+        self._active = [(w, s) for (w, s) in self._active if w is not worker]

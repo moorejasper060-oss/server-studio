@@ -11,6 +11,12 @@ Run `python -m server_studio.ui.main`, then verify:
 - [ ] Settings: clicking each of the 6 themes recolors the app immediately.
 - [ ] Restart the app — the last chosen theme is still applied.
 
+## Sharing (Plan 4)
+- [ ] Open a server's **Sharing** tab: shows the LAN `ip:port` (friends on your WiFi can join).
+- [ ] Public IP + port-forward guide is shown.
+- [ ] With the `bore` binary on PATH, click **Share over internet** → a `bore.pub:PORT`
+      address appears; clicking Stop clears it.
+
 ## Mod browser (Plan 3 — needs real network)
 - [ ] Open a **Fabric** server's **Mods** tab; search "sodium"; click Install.
 - [ ] The jar lands in the server's `mods/` folder; it shows in the Installed list.

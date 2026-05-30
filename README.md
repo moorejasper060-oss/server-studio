@@ -3,10 +3,10 @@
 Create and manage local Minecraft servers with a modern desktop UI.
 
 ## Status
-Core foundation + loaders & Java. The Python core can create, start, stop, and stream
-servers for Vanilla, Paper, Purpur, and Fabric, auto-downloading the correct Temurin Java
-runtime. Forge/NeoForge/Spigot, the mod browser, tunnel, backups, and the UI arrive in
-later plans.
+Desktop app with full loader coverage. The modern PySide6 UI can create, start, stop, and
+stream servers for **Vanilla, Paper, Purpur, Fabric, Forge, NeoForge, and Spigot**,
+auto-downloading the correct Temurin Java runtime. The mod/plugin browser, internet
+sharing (tunnel), and world backups arrive in later plans.
 
 ## Development
 ```

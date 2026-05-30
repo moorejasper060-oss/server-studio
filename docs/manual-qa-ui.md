@@ -10,3 +10,9 @@ Run `python -m server_studio.ui.main`, then verify:
 - [ ] Stop the server — status flips to Stopped.
 - [ ] Settings: clicking each of the 6 themes recolors the app immediately.
 - [ ] Restart the app — the last chosen theme is still applied.
+
+## Loaders (Plan 2b — needs real network + Java)
+- [ ] Create a **Forge** 1.20.x server: installer downloads, runs, and the server boots
+      (launches via the @args file, not -jar).
+- [ ] Create a **NeoForge** 1.21.x server: installer resolves the right version and boots.
+- [ ] Create a **Spigot** server: BuildTools compiles (slow — minutes) and the jar boots.

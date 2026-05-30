@@ -37,6 +37,10 @@ class ServerManager:
         installer = self._installer_for(loader)
         result = installer.install(mc_version, server_dir / "server.jar")
         (server_dir / "eula.txt").write_text("eula=true\n", encoding="utf-8")
+        (server_dir / "server.properties").write_text(
+            f"server-port={port}\nmotd=A Minecraft Server (Server Studio)\n",
+            encoding="utf-8",
+        )
 
         cfg = ServerConfig(
             id=server_id,

@@ -50,3 +50,17 @@ def test_notify_shows_toast(qtbot, tmp_path):
     w, _ = _win(qtbot, tmp_path)
     w._notify("uh oh")
     assert w.toast.text() == "uh oh"
+
+
+def test_closeevent_stops_running_servers(qtbot, tmp_path):
+    stopped = []
+    class RunningManager:
+        def __init__(self): self._servers = [Cfg("a", "A", "1.20.6", "paper")]; self._running = {"a"}
+        def list_servers(self): return self._servers
+        def is_running(self, sid): return sid in self._running
+        def stop_server(self, sid): stopped.append(sid); self._running.discard(sid)
+    paths = AppPaths(root=tmp_path); paths.ensure()
+    w = MainWindow(manager=RunningManager(), paths=paths, apply_theme=lambda k: None)
+    qtbot.addWidget(w)
+    w.close()
+    assert stopped == ["a"]

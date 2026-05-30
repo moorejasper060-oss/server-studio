@@ -127,3 +127,10 @@ def test_send_command_when_not_running_raises(tmp_path):
         assert False, "expected RuntimeError"
     except RuntimeError:
         pass
+
+
+def test_create_writes_server_properties_with_port(tmp_path):
+    mgr, _ = _make_manager(tmp_path)
+    cfg = mgr.create_server(name="SMP", mc_version="1.20.6", loader="vanilla", port=25599)
+    props = (mgr.paths.server_dir(cfg.id) / "server.properties").read_text(encoding="utf-8")
+    assert "server-port=25599" in props

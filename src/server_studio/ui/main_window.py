@@ -266,6 +266,12 @@ class MainWindow(QMainWindow):
         if self._detail is not None and self._detail.server_id == server_id:
             self._detail.set_status(self.manager.is_running(server_id))
 
+    def closeEvent(self, event):
+        for cfg in self.manager.list_servers():
+            if self.manager.is_running(cfg.id):
+                self.manager.stop_server(cfg.id)
+        super().closeEvent(event)
+
     def _on_console_line(self, server_id: str, text: str) -> None:
         if self._detail is not None and self._detail.server_id == server_id:
             self._detail.append_console_line(text)

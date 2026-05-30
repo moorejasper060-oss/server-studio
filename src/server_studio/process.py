@@ -57,7 +57,7 @@ class ServerProcess:
             if self._proc.stdin and not self._proc.stdin.closed:
                 self._proc.stdin.write("stop\n")
                 self._proc.stdin.flush()
-        except (BrokenPipeError, ValueError):
+        except (OSError, ValueError):
             pass
         try:
             self._proc.wait(timeout=timeout)

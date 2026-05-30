@@ -8,17 +8,19 @@ from PySide6.QtWidgets import QApplication
 
 from server_studio.paths import AppPaths
 from server_studio.app import build_server_manager, build_content_services, build_sharing_factory, build_backup_factory
+from server_studio.ui.async_runner import AsyncRunner
 from server_studio.ui.main_window import MainWindow
 from server_studio.ui.theme import qss
 
 
 def make_window(manager, paths: AppPaths, apply_theme,
                 content_manager=None, search_client=None, sharing_factory=None,
-                backup_factory=None) -> MainWindow:
+                backup_factory=None, task_runner=None) -> MainWindow:
     """Build the MainWindow (extracted for testability)."""
     return MainWindow(manager=manager, paths=paths, apply_theme=apply_theme,
                       content_manager=content_manager, search_client=search_client,
-                      sharing_factory=sharing_factory, backup_factory=backup_factory)
+                      sharing_factory=sharing_factory, backup_factory=backup_factory,
+                      task_runner=task_runner)
 
 
 def _default_data_root() -> AppPaths:
@@ -37,9 +39,11 @@ def main() -> int:
     def apply_theme(key: str) -> None:
         app.setStyleSheet(qss(key))
 
+    task_runner = AsyncRunner()
     win = make_window(manager=manager, paths=paths, apply_theme=apply_theme,
                       content_manager=content_manager, search_client=search_client,
-                      sharing_factory=sharing_factory, backup_factory=backup_factory)
+                      sharing_factory=sharing_factory, backup_factory=backup_factory,
+                      task_runner=task_runner)
     apply_theme(win.settings.theme)
     win.resize(1000, 680)
     win.show()

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from server_studio.paths import AppPaths
+from server_studio.ui.async_runner import run_sync
 from server_studio.ui.settings_store import AppSettings
 from server_studio.ui.widgets.dashboard import Dashboard
 from server_studio.ui.widgets.settings_page import SettingsPage
@@ -35,7 +36,7 @@ class _StopBridge(QObject):
 class MainWindow(QMainWindow):
     def __init__(self, manager, paths: AppPaths, apply_theme: Callable[[str], None],
                  content_manager=None, search_client=None, sharing_factory=None,
-                 backup_factory=None, parent=None):
+                 backup_factory=None, task_runner=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Server Studio")
         self.manager = manager
@@ -45,6 +46,7 @@ class MainWindow(QMainWindow):
         self._search_client = search_client
         self._sharing_factory = sharing_factory
         self._backup_factory = backup_factory
+        self._task_runner = task_runner or run_sync
         self.settings = AppSettings.load(paths)
         self._detail: ServerDetail | None = None
         self._wizard = None
@@ -165,7 +167,8 @@ class MainWindow(QMainWindow):
                                     loader=cfg.loader, running=self.manager.is_running(cfg.id),
                                     content_service=content_service,
                                     sharing_service=sharing_service,
-                                    backup_service=backup_service)
+                                    backup_service=backup_service,
+                                    task_runner=self._task_runner)
         self._detail.back_requested.connect(self._show_dashboard)
         self._detail.toggle_requested.connect(self._toggle_server)
         sid = cfg.id

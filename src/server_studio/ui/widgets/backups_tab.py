@@ -4,13 +4,16 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget, QListWidgetItem,
 )
 
+from server_studio.ui.async_runner import run_sync
+
 
 class BackupsTab(QWidget):
     """Create / restore / delete world backups via an injected service."""
 
-    def __init__(self, service, parent=None):
+    def __init__(self, service, task_runner=run_sync, parent=None):
         super().__init__(parent)
         self._service = service
+        self._run = task_runner
 
         layout = QVBoxLayout(self)
         top = QHBoxLayout()
@@ -27,8 +30,7 @@ class BackupsTab(QWidget):
         self.refresh()
 
     def _create(self) -> None:
-        self._service.create()
-        self.refresh()
+        self._run(lambda: self._service.create(), lambda _r: self.refresh())
 
     def refresh(self) -> None:
         self.backups_list.clear()
@@ -45,8 +47,7 @@ class BackupsTab(QWidget):
             self.backups_list.setItemWidget(item, row)
 
     def _restore(self, name: str) -> None:
-        self._service.restore(name)
-        self.refresh()
+        self._run(lambda: self._service.restore(name), lambda _r: self.refresh())
 
     def _delete(self, name: str) -> None:
         self._service.delete(name)

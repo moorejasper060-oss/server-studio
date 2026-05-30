@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 )
 
 from server_studio.installers.content_target import supports_content
+from server_studio.ui.async_runner import run_sync
 from server_studio.ui.widgets.backups_tab import BackupsTab
 from server_studio.ui.widgets.console_view import ConsoleView
 from server_studio.ui.widgets.mods_tab import ModsTab
@@ -22,7 +23,7 @@ class ServerDetail(QWidget):
 
     def __init__(self, *, server_id: str, name: str, version: str, loader: str,
                  running: bool, content_service=None, sharing_service=None,
-                 backup_service=None, parent=None):
+                 backup_service=None, task_runner=run_sync, parent=None):
         super().__init__(parent)
         self._id = server_id
 
@@ -53,7 +54,7 @@ class ServerDetail(QWidget):
         self.console.command_entered.connect(self.command_entered.emit)
         self.tabs.addTab(self.console, "Console")
         if content_service is not None and supports_content(loader):
-            self.mods_tab = ModsTab(service=content_service)
+            self.mods_tab = ModsTab(service=content_service, task_runner=task_runner)
             self.tabs.addTab(self.mods_tab, "Mods")
         else:
             self.mods_tab = None
@@ -61,7 +62,7 @@ class ServerDetail(QWidget):
         self.tabs.addTab(self._placeholder("Server settings."), "Settings")
         self.tabs.addTab(self._placeholder("Connected players."), "Players")
         if backup_service is not None:
-            self.backups_tab = BackupsTab(service=backup_service)
+            self.backups_tab = BackupsTab(service=backup_service, task_runner=task_runner)
             self.tabs.addTab(self.backups_tab, "Backups")
         else:
             self.backups_tab = None

@@ -3,8 +3,10 @@
 Create and manage local Minecraft servers with a modern desktop UI.
 
 ## Status
-Plan 1 (Core Foundation) — pure-Python core that can create, start, stop, and stream a
-Vanilla server. UI, loaders, mod browser, tunnel, and backups arrive in later plans.
+Core foundation + loaders & Java. The Python core can create, start, stop, and stream
+servers for Vanilla, Paper, Purpur, and Fabric, auto-downloading the correct Temurin Java
+runtime. Forge/NeoForge/Spigot, the mod browser, tunnel, backups, and the UI arrive in
+later plans.
 
 ## Development
 ```

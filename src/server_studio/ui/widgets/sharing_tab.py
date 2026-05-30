@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
 
 
 class SharingTab(QWidget):
     """Shows LAN/public addresses and a one-click internet tunnel toggle."""
+
+    address_received = Signal(str)
 
     def __init__(self, service, parent=None):
         super().__init__(parent)
@@ -36,13 +39,14 @@ class SharingTab(QWidget):
         layout.addWidget(self.share_btn)
         layout.addStretch(1)
 
+        self.address_received.connect(self._on_address)
         self._sync()
 
     def _toggle(self) -> None:
         if self._service.tunnel_active():
             self._service.stop_tunnel()
         else:
-            self._service.start_tunnel(self._on_address)
+            self._service.start_tunnel(self.address_received.emit)
         self._sync()
 
     def _on_address(self, address: str) -> None:

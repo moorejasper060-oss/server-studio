@@ -34,7 +34,7 @@ class _StopBridge(QObject):
 
 class MainWindow(QMainWindow):
     def __init__(self, manager, paths: AppPaths, apply_theme: Callable[[str], None],
-                 content_manager=None, search_client=None, parent=None):
+                 content_manager=None, search_client=None, sharing_factory=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Server Studio")
         self.manager = manager
@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         self._apply_theme = apply_theme
         self._content_manager = content_manager
         self._search_client = search_client
+        self._sharing_factory = sharing_factory
         self.settings = AppSettings.load(paths)
         self._detail: ServerDetail | None = None
         self._wizard = None
@@ -156,9 +157,11 @@ class MainWindow(QMainWindow):
                 server_id=cfg.id, mc_version=cfg.mc_version, loader=cfg.loader,
                 search_client=self._search_client, content=self._content_manager,
             )
+        sharing_service = self._sharing_factory(cfg.id, cfg.port) if self._sharing_factory else None
         self._detail = ServerDetail(server_id=cfg.id, name=cfg.name, version=cfg.mc_version,
                                     loader=cfg.loader, running=self.manager.is_running(cfg.id),
-                                    content_service=content_service)
+                                    content_service=content_service,
+                                    sharing_service=sharing_service)
         self._detail.back_requested.connect(self._show_dashboard)
         self._detail.toggle_requested.connect(self._toggle_server)
         sid = cfg.id

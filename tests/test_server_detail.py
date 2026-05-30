@@ -60,3 +60,25 @@ def test_mods_tab_is_placeholder_without_service(qtbot):
                      running=False)
     qtbot.addWidget(d)
     assert d.mods_tab is None
+
+
+class _FakeSharingService:
+    def lan_address(self): return "192.168.1.5:25565"
+    def public_address(self): return "203.0.113.7:25565"
+    def tunnel_active(self): return False
+    def start_tunnel(self, on_address): pass
+    def stop_tunnel(self): pass
+
+
+def test_sharing_tab_real_when_service_provided(qtbot):
+    from server_studio.ui.widgets.sharing_tab import SharingTab
+    d = ServerDetail(server_id="a", name="N", version="1.20.6", loader="paper",
+                     running=False, sharing_service=_FakeSharingService())
+    qtbot.addWidget(d)
+    assert isinstance(d.sharing_tab, SharingTab)
+
+
+def test_sharing_tab_placeholder_without_service(qtbot):
+    d = ServerDetail(server_id="a", name="N", version="1.20.6", loader="paper", running=False)
+    qtbot.addWidget(d)
+    assert d.sharing_tab is None

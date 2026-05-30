@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 from server_studio.installers.content_target import supports_content
 from server_studio.ui.widgets.console_view import ConsoleView
 from server_studio.ui.widgets.mods_tab import ModsTab
+from server_studio.ui.widgets.sharing_tab import SharingTab
 from server_studio.ui.widgets.status_dot import StatusDot
 
 
@@ -19,7 +20,7 @@ class ServerDetail(QWidget):
     command_entered = Signal(str)
 
     def __init__(self, *, server_id: str, name: str, version: str, loader: str,
-                 running: bool, content_service=None, parent=None):
+                 running: bool, content_service=None, sharing_service=None, parent=None):
         super().__init__(parent)
         self._id = server_id
 
@@ -58,7 +59,12 @@ class ServerDetail(QWidget):
         self.tabs.addTab(self._placeholder("Server settings."), "Settings")
         self.tabs.addTab(self._placeholder("Connected players."), "Players")
         self.tabs.addTab(self._placeholder("World backups arrive in a later update."), "Backups")
-        self.tabs.addTab(self._placeholder("Invite friends arrives in a later update."), "Sharing")
+        if sharing_service is not None:
+            self.sharing_tab = SharingTab(service=sharing_service)
+            self.tabs.addTab(self.sharing_tab, "Sharing")
+        else:
+            self.sharing_tab = None
+            self.tabs.addTab(self._placeholder("Invite friends arrives in a later update."), "Sharing")
         layout.addWidget(self.tabs, 1)
 
         # ── Tab cross-fade ─────────────────────────────────────────────────────

@@ -10,10 +10,11 @@ from server_studio.ui.async_runner import run_sync
 class BackupsTab(QWidget):
     """Create / restore / delete world backups via an injected service."""
 
-    def __init__(self, service, task_runner=run_sync, parent=None):
+    def __init__(self, service, task_runner=run_sync, notify=None, parent=None):
         super().__init__(parent)
         self._service = service
         self._run = task_runner
+        self._notify = notify or (lambda _m: None)
 
         layout = QVBoxLayout(self)
         top = QHBoxLayout()
@@ -30,7 +31,8 @@ class BackupsTab(QWidget):
         self.refresh()
 
     def _create(self) -> None:
-        self._run(lambda: self._service.create(), lambda _r: self.refresh())
+        self._run(lambda: self._service.create(), lambda _r: self.refresh(),
+                  lambda m: self._notify(f"Backup failed: {m}"))
 
     def refresh(self) -> None:
         self.backups_list.clear()
@@ -47,7 +49,8 @@ class BackupsTab(QWidget):
             self.backups_list.setItemWidget(item, row)
 
     def _restore(self, name: str) -> None:
-        self._run(lambda: self._service.restore(name), lambda _r: self.refresh())
+        self._run(lambda: self._service.restore(name), lambda _r: self.refresh(),
+                  lambda m: self._notify(f"Restore failed: {m}"))
 
     def _delete(self, name: str) -> None:
         self._service.delete(name)

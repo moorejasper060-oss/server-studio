@@ -46,3 +46,15 @@ def test_refresh_lists_installed(qtbot):
     w = ModsTab(service=svc); qtbot.addWidget(w)
     w.refresh_installed()
     assert w.installed_list.count() == 1
+
+
+def test_install_error_notifies(qtbot):
+    class BoomService(FakeService):
+        def install(self, result):
+            raise RuntimeError("disk full")
+    msgs = []
+    w = ModsTab(service=BoomService(), notify=msgs.append)
+    qtbot.addWidget(w)
+    w._do_search()
+    w._install_result({"project_id": "A", "title": "X", "description": ""})
+    assert any("disk full" in m for m in msgs)

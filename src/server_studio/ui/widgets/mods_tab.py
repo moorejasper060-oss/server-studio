@@ -12,10 +12,11 @@ from server_studio.ui.async_runner import run_sync
 class ModsTab(QWidget):
     """Search + install mods/plugins and manage installed content via an injected service."""
 
-    def __init__(self, service, task_runner=run_sync, parent=None):
+    def __init__(self, service, task_runner=run_sync, notify=None, parent=None):
         super().__init__(parent)
         self._service = service
         self._run = task_runner
+        self._notify = notify or (lambda _m: None)
         self._results = []
 
         layout = QVBoxLayout(self)
@@ -43,7 +44,8 @@ class ModsTab(QWidget):
 
     def _do_search(self) -> None:
         query = self.search_input.text().strip()
-        self._run(lambda: self._service.search(query), self._show_results)
+        self._run(lambda: self._service.search(query), self._show_results,
+                  lambda m: self._notify(f"Search failed: {m}"))
 
     def _show_results(self, results) -> None:
         self._results = results
@@ -60,7 +62,8 @@ class ModsTab(QWidget):
             self.results_list.setItemWidget(item, btn_row)
 
     def _install_result(self, result: dict) -> None:
-        self._run(lambda: self._service.install(result), lambda _r: self.refresh_installed())
+        self._run(lambda: self._service.install(result), lambda _r: self.refresh_installed(),
+                  lambda m: self._notify(f"Install failed: {m}"))
 
     def refresh_installed(self) -> None:
         self.installed_list.clear()

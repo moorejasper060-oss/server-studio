@@ -36,3 +36,14 @@ def test_delete_removes(qtbot):
     w._delete("a.zip")
     assert ("delete", "a.zip") in svc.calls
     assert w.backups_list.count() == 0
+
+
+def test_create_error_notifies(qtbot):
+    class BoomService(FakeService):
+        def create(self):
+            raise RuntimeError("no space")
+    msgs = []
+    w = BackupsTab(service=BoomService(), notify=msgs.append)
+    qtbot.addWidget(w)
+    w.create_btn.click()
+    assert any("no space" in m for m in msgs)

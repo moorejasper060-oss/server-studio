@@ -44,3 +44,9 @@ def test_open_server_shows_detail(qtbot, tmp_path):
     w._open_server("a")
     assert w.stack.currentWidget() is w._detail
     assert w._detail.title.text() == "A"
+
+
+def test_notify_shows_toast(qtbot, tmp_path):
+    w, _ = _win(qtbot, tmp_path)
+    w._notify("uh oh")
+    assert w.toast.text() == "uh oh"

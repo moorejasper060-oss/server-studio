@@ -18,6 +18,7 @@ from server_studio.ui.settings_store import AppSettings
 from server_studio.ui.widgets.dashboard import Dashboard
 from server_studio.ui.widgets.settings_page import SettingsPage
 from server_studio.ui.widgets.server_detail import ServerDetail
+from server_studio.ui.widgets.toast import Toast
 
 
 class _ConsoleBridge(QObject):
@@ -83,7 +84,18 @@ class MainWindow(QMainWindow):
         self._page_anim: QPropertyAnimation | None = None
 
         self.setCentralWidget(central)
+        self.toast = Toast(central)
+        self.toast.hide()
         self.refresh()
+
+    # ── Toast notification ─────────────────────────────────────────────────────
+    def _notify(self, message: str) -> None:
+        self.toast.show_message(message)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.toast.isVisible():
+            self.toast._reposition()
 
     # ── Page transition ────────────────────────────────────────────────────────
     def _fade_to(self, widget: QWidget) -> None:
@@ -168,7 +180,8 @@ class MainWindow(QMainWindow):
                                     content_service=content_service,
                                     sharing_service=sharing_service,
                                     backup_service=backup_service,
-                                    task_runner=self._task_runner)
+                                    task_runner=self._task_runner,
+                                    notify=self._notify)
         self._detail.back_requested.connect(self._show_dashboard)
         self._detail.toggle_requested.connect(self._toggle_server)
         sid = cfg.id
@@ -223,8 +236,8 @@ class MainWindow(QMainWindow):
         self.refresh()
 
     def _on_create_failed(self, message: str) -> None:
-        # Surfaced to the user via a toast in the real app; stored for now.
         self._last_create_error = message
+        self._notify(f"Couldn't create server: {message}")
 
     def _toggle_server(self, server_id: str) -> None:
         if self.manager.is_running(server_id):

@@ -15,5 +15,8 @@ def test_options_have_label_and_kind():
     assert by_key["vanilla"].kind == "none"
     assert by_key["paper"].kind == "plugins"
     assert by_key["fabric"].kind == "mods"
+    assert by_key["forge"].kind == "mods"
+    assert by_key["neoforge"].kind == "mods"
+    assert by_key["spigot"].kind == "plugins"
     for o in opts:
-        assert o.label  # non-empty label
+        assert o.label

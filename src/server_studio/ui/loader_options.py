@@ -10,6 +10,9 @@ _META = {
     "paper": ("Paper", "plugins", "Fast, optimized. Best for plugin servers."),
     "purpur": ("Purpur", "plugins", "Paper plus extra customization options."),
     "fabric": ("Fabric", "mods", "Lightweight modding. Great for performance mods."),
+    "forge": ("Forge", "mods", "The classic big-modpack platform."),
+    "neoforge": ("NeoForge", "mods", "Modern Forge fork, growing fast."),
+    "spigot": ("Spigot", "plugins", "Bukkit-based plugins (compiled via BuildTools)."),
 }
 
 

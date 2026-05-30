@@ -29,7 +29,9 @@ def test_loader_step_lists_supported_loaders(qtbot):
     qtbot.addWidget(w)
     w.select_version("1.20.6")
     w.next_step()
-    assert set(w.loader_buttons) == {"vanilla", "paper", "purpur", "fabric"}
+    assert set(w.loader_buttons) == {
+        "vanilla", "paper", "purpur", "fabric", "forge", "neoforge", "spigot",
+    }
 
 
 def test_back_step_returns(qtbot):

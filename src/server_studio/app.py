@@ -8,6 +8,7 @@ from server_studio.manager import ServerManager
 from server_studio.java_manager import JavaManager
 from server_studio.process import ServerProcess
 from server_studio.installers.registry import build_installer
+from server_studio.installers.runner import run_process
 from server_studio.temurin import temurin_fetcher
 
 
@@ -19,7 +20,7 @@ def build_server_manager(paths: AppPaths) -> ServerManager:
 
     return ServerManager(
         paths=paths,
-        installer_for=lambda loader: build_installer(loader, client=client),
+        installer_for=lambda loader: build_installer(loader, client=client, java_resolver=java.resolver, runner=run_process),
         process_factory=ServerProcess,
         java_resolver=java.resolver,
     )

@@ -23,15 +23,17 @@ class BoreTunnel:
         self._on_address = on_address
         self._proc = None
         self._address: str | None = None
+        self._stopped = False
         self._re = re.compile(rf"({re.escape(remote_host)}:\d+)")
 
     def start(self) -> None:
+        self._stopped = False
         command = [self._bore_path, "local", str(self._port), "--to", self._remote_host]
         self._proc = self._factory(command, self._cwd, self._on_output)
         self._proc.start()
 
     def _on_output(self, line: str) -> None:
-        if self._address:
+        if self._stopped or self._address:
             return
         match = self._re.search(line)
         if match:
@@ -47,6 +49,7 @@ class BoreTunnel:
         return self._proc is not None and self._proc.is_running()
 
     def stop(self) -> None:
+        self._stopped = True
         if self._proc:
             self._proc.stop()
             self._proc = None

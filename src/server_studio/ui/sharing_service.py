@@ -24,6 +24,8 @@ class SharingService:
         return self._tunnel is not None and self._tunnel.is_running()
 
     def start_tunnel(self, on_address) -> None:
+        if self._tunnel is not None:
+            self._tunnel.stop()
         self._tunnel = self._tunnel_factory(on_address)
         self._tunnel.start()
 

@@ -47,3 +47,15 @@ def test_address_none_before_start(tmp_path):
     t = BoreTunnel(port=25565, cwd=tmp_path,
                    process_factory=lambda c, d, o: FakeProc(c, d, o))
     assert t.address is None
+
+
+def test_late_output_after_stop_is_ignored(tmp_path):
+    got = []
+    t = BoreTunnel(port=25565, cwd=tmp_path,
+                   process_factory=lambda c, d, o: FakeProc(c, d, o),
+                   on_address=got.append)
+    t.start()                 # FakeProc emits the address on start
+    t.stop()
+    t._on_output("INFO listening at bore.pub:99999")  # late line from the dying process
+    assert t.address is None
+    assert got == ["bore.pub:45678"]  # not updated again

@@ -39,23 +39,23 @@ def build_content_services(paths: AppPaths):
 
 
 def build_sharing_factory(bore_path: str = "bore"):
-    """Return make(server_id, port) -> SharingService (LAN + public IP + bore tunnel)."""
-    import httpx as _httpx
+    """Return make(server_id, port) -> SharingService. Public IP resolved once at startup."""
     from pathlib import Path
     from server_studio.sharing.network_info import lan_ip, public_ip
     from server_studio.sharing.tunnel import BoreTunnel
     from server_studio.process import ServerProcess
     from server_studio.ui.sharing_service import SharingService
 
+    try:
+        with httpx.Client(timeout=3.0) as client:
+            pub = public_ip(client)
+    except Exception:
+        pub = "unavailable (see whatismyip.com)"
+
     def make(server_id: str, port: int) -> SharingService:
-        try:
-            pub = public_ip(_httpx.Client(timeout=3.0))
-        except Exception:
-            pub = "unavailable (see whatismyip.com)"
-        local = lan_ip()
         def tunnel_factory(on_address):
             return BoreTunnel(port=port, cwd=Path.cwd(), process_factory=ServerProcess,
                               bore_path=bore_path, remote_host="bore.pub", on_address=on_address)
-        return SharingService(port=port, public_ip=pub, lan_ip=local,
+        return SharingService(port=port, public_ip=pub, lan_ip=lan_ip(),
                               tunnel_factory=tunnel_factory)
     return make

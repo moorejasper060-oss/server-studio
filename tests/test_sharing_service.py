@@ -28,3 +28,14 @@ def test_start_stop_tunnel():
     assert svc.tunnel_active() is True
     svc.stop_tunnel()
     assert svc.tunnel_active() is False
+
+
+def test_start_tunnel_stops_previous():
+    made = []
+    def factory(on_addr):
+        t = FakeTunnel(); made.append(t); return t
+    svc = SharingService(port=25565, public_ip="x", lan_ip="y", tunnel_factory=factory)
+    svc.start_tunnel(lambda a: None)
+    svc.start_tunnel(lambda a: None)   # second start
+    assert made[0].started is False    # first tunnel was stopped
+    assert len(made) == 2

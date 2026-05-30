@@ -11,6 +11,11 @@ Run `python -m server_studio.ui.main`, then verify:
 - [ ] Settings: clicking each of the 6 themes recolors the app immediately.
 - [ ] Restart the app — the last chosen theme is still applied.
 
+## Backups (Plan 5)
+- [ ] Open a server's **Backups** tab; click **Backup now** → a timestamped zip appears.
+- [ ] Delete the server's `world/`, click **Restore** → the world is back.
+- [ ] **Delete** removes a backup from the list.
+
 ## Sharing (Plan 4)
 - [ ] Open a server's **Sharing** tab: shows the LAN `ip:port` (friends on your WiFi can join).
 - [ ] Public IP + port-forward guide is shown.

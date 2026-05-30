@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.dashboard = Dashboard()
         self.dashboard.open_requested.connect(self._open_server)
+        self.dashboard.new_requested.connect(self._start_new_server)
         self.settings_page = SettingsPage(current=self.settings.theme)
         self.settings_page.theme_selected.connect(self._on_theme_selected)
         self.stack.addWidget(self.dashboard)
@@ -70,3 +71,30 @@ class MainWindow(QMainWindow):
         self._detail.back_requested.connect(self._show_dashboard)
         self.stack.addWidget(self._detail)
         self.stack.setCurrentWidget(self._detail)
+
+    def open_new_server_dialog(self, versions, on_create) -> None:
+        """versions: list[str]; on_create: callable(result_dict) -> None."""
+        from server_studio.ui.widgets.new_server_wizard import NewServerWizard
+        dlg = NewServerWizard(versions=versions, parent=self)
+        dlg.next_btn.clicked.connect(
+            lambda: self._maybe_finish_wizard(dlg, on_create)
+        )
+        dlg.show()
+        self._wizard = dlg
+
+    def _maybe_finish_wizard(self, dlg, on_create) -> None:
+        # On the final step, "Continue" acts as "Create".
+        if dlg.stack.currentIndex() == dlg.stack.count() - 1:
+            on_create(dlg.result_data)
+            dlg.accept()
+
+    def _start_new_server(self) -> None:
+        versions = getattr(self, "_versions", ["1.21.4", "1.20.6", "1.20.4", "1.16.5"])
+        self.open_new_server_dialog(versions, self._create_server)
+
+    def _create_server(self, data: dict) -> None:
+        self.manager.create_server(
+            name=data["name"], mc_version=data["mc_version"],
+            loader=data["loader"], ram_mb=data["ram_mb"],
+        )
+        self.refresh()

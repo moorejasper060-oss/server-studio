@@ -24,3 +24,15 @@ def build_server_manager(paths: AppPaths) -> ServerManager:
         process_factory=ServerProcess,
         java_resolver=java.resolver,
     )
+
+
+def build_content_services(paths: AppPaths):
+    """Return (modrinth_client, content_manager) for the UI mods browser."""
+    from server_studio.installers.modrinth import ModrinthClient
+    from server_studio.content_manager import ContentManager
+    client = httpx.Client(follow_redirects=True, timeout=60.0)
+    def downloader(url: str) -> bytes:
+        resp = client.get(url)
+        resp.raise_for_status()
+        return resp.content
+    return ModrinthClient(client=client), ContentManager(paths, downloader=downloader)

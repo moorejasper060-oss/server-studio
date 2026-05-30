@@ -2,6 +2,14 @@
 from server_studio.ui.widgets.server_detail import ServerDetail
 
 
+class _FakeContentService:
+    def search(self, q): return []
+    def install(self, r): pass
+    def list_installed(self): return []
+    def set_enabled(self, f, e): pass
+    def remove(self, f): pass
+
+
 def _detail(qtbot, running=True):
     d = ServerDetail(server_id="abc", name="SkyBlock SMP", version="1.20.6",
                      loader="fabric", running=running)
@@ -37,3 +45,18 @@ def test_append_console_line(qtbot):
     d = _detail(qtbot)
     d.append_console_line("Done (4.8s)!")
     assert "Done (4.8s)!" in d.console.log.toPlainText()
+
+
+def test_mods_tab_is_real_when_service_provided(qtbot):
+    from server_studio.ui.widgets.mods_tab import ModsTab
+    d = ServerDetail(server_id="abc", name="N", version="1.20.6", loader="fabric",
+                     running=False, content_service=_FakeContentService())
+    qtbot.addWidget(d)
+    assert isinstance(d.mods_tab, ModsTab)
+
+
+def test_mods_tab_is_placeholder_without_service(qtbot):
+    d = ServerDetail(server_id="abc", name="N", version="1.20.6", loader="fabric",
+                     running=False)
+    qtbot.addWidget(d)
+    assert d.mods_tab is None

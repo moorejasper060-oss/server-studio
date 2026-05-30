@@ -7,7 +7,9 @@ from PySide6.QtWidgets import (
     QGraphicsOpacityEffect,
 )
 
+from server_studio.installers.content_target import supports_content
 from server_studio.ui.widgets.console_view import ConsoleView
+from server_studio.ui.widgets.mods_tab import ModsTab
 from server_studio.ui.widgets.status_dot import StatusDot
 
 
@@ -17,7 +19,7 @@ class ServerDetail(QWidget):
     command_entered = Signal(str)
 
     def __init__(self, *, server_id: str, name: str, version: str, loader: str,
-                 running: bool, parent=None):
+                 running: bool, content_service=None, parent=None):
         super().__init__(parent)
         self._id = server_id
 
@@ -47,7 +49,12 @@ class ServerDetail(QWidget):
         self.console = ConsoleView(self)
         self.console.command_entered.connect(self.command_entered.emit)
         self.tabs.addTab(self.console, "Console")
-        self.tabs.addTab(self._placeholder("Mods browser arrives in a later update."), "Mods")
+        if content_service is not None and supports_content(loader):
+            self.mods_tab = ModsTab(service=content_service)
+            self.tabs.addTab(self.mods_tab, "Mods")
+        else:
+            self.mods_tab = None
+            self.tabs.addTab(self._placeholder("Mods browser arrives in a later update."), "Mods")
         self.tabs.addTab(self._placeholder("Server settings."), "Settings")
         self.tabs.addTab(self._placeholder("Connected players."), "Players")
         self.tabs.addTab(self._placeholder("World backups arrive in a later update."), "Backups")

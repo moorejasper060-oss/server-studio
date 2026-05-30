@@ -34,12 +34,14 @@ class _StopBridge(QObject):
 
 class MainWindow(QMainWindow):
     def __init__(self, manager, paths: AppPaths, apply_theme: Callable[[str], None],
-                 parent=None):
+                 content_manager=None, search_client=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Server Studio")
         self.manager = manager
         self.paths = paths
         self._apply_theme = apply_theme
+        self._content_manager = content_manager
+        self._search_client = search_client
         self.settings = AppSettings.load(paths)
         self._detail: ServerDetail | None = None
         self._wizard = None
@@ -146,8 +148,17 @@ class MainWindow(QMainWindow):
         cfg = next(c for c in self.manager.list_servers() if c.id == server_id)
         if self._detail is not None:
             self._detail.setParent(None)
+        from server_studio.installers.content_target import supports_content
+        content_service = None
+        if self._content_manager and self._search_client and supports_content(cfg.loader):
+            from server_studio.ui.content_service import ContentService
+            content_service = ContentService(
+                server_id=cfg.id, mc_version=cfg.mc_version, loader=cfg.loader,
+                search_client=self._search_client, content=self._content_manager,
+            )
         self._detail = ServerDetail(server_id=cfg.id, name=cfg.name, version=cfg.mc_version,
-                                    loader=cfg.loader, running=self.manager.is_running(cfg.id))
+                                    loader=cfg.loader, running=self.manager.is_running(cfg.id),
+                                    content_service=content_service)
         self._detail.back_requested.connect(self._show_dashboard)
         self._detail.toggle_requested.connect(self._toggle_server)
         sid = cfg.id

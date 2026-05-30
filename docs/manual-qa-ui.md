@@ -11,6 +11,12 @@ Run `python -m server_studio.ui.main`, then verify:
 - [ ] Settings: clicking each of the 6 themes recolors the app immediately.
 - [ ] Restart the app — the last chosen theme is still applied.
 
+## Mod browser (Plan 3 — needs real network)
+- [ ] Open a **Fabric** server's **Mods** tab; search "sodium"; click Install.
+- [ ] The jar lands in the server's `mods/` folder; it shows in the Installed list.
+- [ ] Disable it (file becomes `*.jar.disabled`), re-enable, then Remove.
+- [ ] On a **Vanilla** server the Mods tab shows the placeholder (no browser).
+
 ## Loaders (Plan 2b — needs real network + Java)
 - [ ] Create a **Forge** 1.20.x server: installer downloads, runs, and the server boots
       (launches via the @args file, not -jar).

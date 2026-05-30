@@ -12,3 +12,4 @@ java/
 cache/
 backups/
 .env
+.superpowers/

@@ -1,6 +1,7 @@
 # src/server_studio/ui/main_window.py
 from __future__ import annotations
 
+import threading
 from typing import Callable
 
 from PySide6.QtCore import QObject, Signal
@@ -16,8 +17,16 @@ from server_studio.ui.widgets.server_detail import ServerDetail
 
 
 class _ConsoleBridge(QObject):
-    """Marshals server stdout (emitted from ServerProcess's reader thread) onto the UI thread."""
-    line = Signal(str)
+    """Marshals server stdout (emitted from ServerProcess's reader thread) onto the UI thread.
+
+    Carries (server_id, line) so output is routed only to the matching server's console.
+    """
+    line = Signal(str, str)
+
+
+class _StopBridge(QObject):
+    """Signals (on the UI thread) that an async stop has completed."""
+    done = Signal(str)
 
 
 class MainWindow(QMainWindow):
@@ -33,6 +42,8 @@ class MainWindow(QMainWindow):
         self._wizard = None
         self._console_bridge = _ConsoleBridge()
         self._console_bridge.line.connect(self._on_console_line)
+        self._stop_bridge = _StopBridge()
+        self._stop_bridge.done.connect(self._on_server_stopped)
 
         central = QWidget(); root = QHBoxLayout(central)
 
@@ -112,14 +123,27 @@ class MainWindow(QMainWindow):
 
     def _toggle_server(self, server_id: str) -> None:
         if self.manager.is_running(server_id):
-            self.manager.stop_server(server_id)
+            # Stopping a Minecraft server can block for seconds — do it off the UI thread.
+            def _run() -> None:
+                self.manager.stop_server(server_id)
+                self._stop_bridge.done.emit(server_id)
+            threading.Thread(target=_run, daemon=True).start()
         else:
-            self.manager.start_server(server_id, on_output=self._console_bridge.line.emit)
-        running = self.manager.is_running(server_id)
-        self.refresh()
-        if self._detail is not None and self._detail._id == server_id:
-            self._detail.set_status(running)
+            self.manager.start_server(
+                server_id,
+                on_output=lambda line, sid=server_id: self._console_bridge.line.emit(sid, line),
+            )
+            self.refresh()
+            self._sync_detail_status(server_id)
 
-    def _on_console_line(self, text: str) -> None:
-        if self._detail is not None:
+    def _on_server_stopped(self, server_id: str) -> None:
+        self.refresh()
+        self._sync_detail_status(server_id)
+
+    def _sync_detail_status(self, server_id: str) -> None:
+        if self._detail is not None and self._detail.server_id == server_id:
+            self._detail.set_status(self.manager.is_running(server_id))
+
+    def _on_console_line(self, server_id: str, text: str) -> None:
+        if self._detail is not None and self._detail.server_id == server_id:
             self._detail.append_console_line(text)

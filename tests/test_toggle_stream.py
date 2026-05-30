@@ -1,4 +1,6 @@
 # tests/test_toggle_stream.py
+import threading
+
 from server_studio.paths import AppPaths
 from server_studio.ui.main_window import MainWindow
 
@@ -12,7 +14,6 @@ class StreamingManager:
     def __init__(self, servers):
         self._servers = servers
         self._running = set()
-        self.captured_on_output = None
 
     def list_servers(self):
         return self._servers
@@ -22,7 +23,6 @@ class StreamingManager:
 
     def start_server(self, sid, on_output):
         self._running.add(sid)
-        self.captured_on_output = on_output
         on_output("Done (4.8s)! For help, type help")
 
     def stop_server(self, sid):
@@ -36,24 +36,55 @@ def _win(qtbot, tmp_path, mgr):
     return w
 
 
-def test_toggle_starts_streams_and_stops(qtbot, tmp_path):
+def test_toggle_starts_and_streams(qtbot, tmp_path):
     mgr = StreamingManager([Cfg("a", "A", "1.20.6", "paper")])
     w = _win(qtbot, tmp_path, mgr)
     w._open_server("a")
-
-    w._toggle_server("a")  # start
+    w._toggle_server("a")  # start (synchronous in fake)
     assert mgr.is_running("a")
     assert "Done (4.8s)!" in w._detail.console.log.toPlainText()
     assert "■ Stop" in w._detail.toggle_btn.text()
 
-    w._toggle_server("a")  # stop
+
+def test_toggle_stop_runs_async_and_updates(qtbot, tmp_path):
+    mgr = StreamingManager([Cfg("a", "A", "1.20.6", "paper")])
+    w = _win(qtbot, tmp_path, mgr)
+    w._open_server("a")
+    w._toggle_server("a")  # start
+    with qtbot.waitSignal(w._stop_bridge.done, timeout=2000):
+        w._toggle_server("a")  # stop (async)
     assert not mgr.is_running("a")
-    assert "▶ Start" in w._detail.toggle_btn.text()
+    qtbot.waitUntil(lambda: "▶ Start" in w._detail.toggle_btn.text(), timeout=2000)
 
 
 def test_dashboard_toggle_signal_wired(qtbot, tmp_path):
     mgr = StreamingManager([Cfg("a", "A", "1.20.6", "paper")])
     w = _win(qtbot, tmp_path, mgr)
-    # clicking a card's toggle should start the server via the wired signal
     w.dashboard._cards["a"].toggle_btn.click()
     assert mgr.is_running("a")
+
+
+def test_console_does_not_bleed_across_servers(qtbot, tmp_path):
+    mgr = StreamingManager([Cfg("a", "A", "1.20.6", "paper"),
+                            Cfg("b", "B", "1.20.6", "paper")])
+    w = _win(qtbot, tmp_path, mgr)
+    w._open_server("b")          # B's detail is open
+    w._toggle_server("a")        # but we start A
+    # A's output must NOT appear in B's console
+    assert "Done (4.8s)!" not in w._detail.console.log.toPlainText()
+
+
+def test_console_streams_from_worker_thread(qtbot, tmp_path):
+    class ThreadedManager(StreamingManager):
+        def start_server(self, sid, on_output):
+            self._running.add(sid)
+            t = threading.Thread(target=lambda: on_output("Threaded line!"))
+            t.start(); t.join()
+
+    mgr = ThreadedManager([Cfg("a", "A", "1.20.6", "paper")])
+    w = _win(qtbot, tmp_path, mgr)
+    w._open_server("a")
+    w._toggle_server("a")
+    qtbot.waitUntil(
+        lambda: "Threaded line!" in w._detail.console.log.toPlainText(), timeout=2000
+    )

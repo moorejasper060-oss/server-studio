@@ -61,3 +61,7 @@ class ServerDetail(QWidget):
 
     def append_console_line(self, text: str) -> None:
         self.console.append_line(text)
+
+    @property
+    def server_id(self) -> str:
+        return self._id

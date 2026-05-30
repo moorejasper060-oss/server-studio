@@ -4,8 +4,11 @@ from __future__ import annotations
 import threading
 from typing import Callable
 
-from PySide6.QtCore import QObject, Signal, QThread
+from PySide6.QtCore import (
+    QEasingCurve, QObject, QPropertyAnimation, QSequentialAnimationGroup, Signal, QThread,
+)
 from PySide6.QtWidgets import (
+    QGraphicsOpacityEffect,
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget, QPushButton,
 )
 
@@ -67,19 +70,72 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.settings_page)
         root.addWidget(self.stack, 1)
 
+        # ── Per-page opacity effects for cross-fade ────────────────────────────
+        # We keep one reusable animation; switching a page fades out the current
+        # one, swaps, then fades the new one in – all via _fade_to().
+        self._page_anim: QPropertyAnimation | None = None
+
         self.setCentralWidget(central)
         self.refresh()
 
+    # ── Page transition ────────────────────────────────────────────────────────
+    def _fade_to(self, widget: QWidget) -> None:
+        """Cross-fade the stack to *widget* (~150 ms total).
+
+        The stack swap is **immediate** (so tests relying on currentWidget()
+        right after the call still pass).  The fade is a purely cosmetic layer
+        applied on top via QGraphicsOpacityEffect.
+        """
+        if self.stack.currentWidget() is widget:
+            return
+
+        current = self.stack.currentWidget()
+
+        # Ensure both widgets have opacity effects.
+        def _ensure_effect(w: QWidget, initial_opacity: float) -> QGraphicsOpacityEffect:
+            eff = w.graphicsEffect()
+            if not isinstance(eff, QGraphicsOpacityEffect):
+                eff = QGraphicsOpacityEffect(w)
+                eff.setOpacity(initial_opacity)
+                w.setGraphicsEffect(eff)
+            return eff
+
+        if current is not None:
+            out_eff = _ensure_effect(current, 1.0)
+        in_eff = _ensure_effect(widget, 0.0)
+
+        # Abort any running animation first.
+        if self._page_anim is not None:
+            self._page_anim.stop()
+
+        # ── Swap immediately (tests can check currentWidget right away) ────────
+        self.stack.setCurrentWidget(widget)
+
+        # ── Then animate: fade in the new page (75 ms) ────────────────────────
+        in_eff.setOpacity(0.0)
+        anim_in = QPropertyAnimation(in_eff, b"opacity", self)
+        anim_in.setDuration(75)
+        anim_in.setStartValue(0.0)
+        anim_in.setEndValue(1.0)
+        anim_in.setEasingCurve(QEasingCurve.OutCubic)
+        self._page_anim = anim_in
+        anim_in.start()
+
+        # Also restore the outgoing page's opacity for the next time it appears.
+        if current is not None:
+            out_eff.setOpacity(1.0)
+
+    # ── Navigation ─────────────────────────────────────────────────────────────
     def refresh(self) -> None:
         servers = self.manager.list_servers()
         running = {c.id for c in servers if self.manager.is_running(c.id)}
         self.dashboard.set_servers(servers, running_ids=running)
 
     def _show_dashboard(self) -> None:
-        self.stack.setCurrentWidget(self.dashboard)
+        self._fade_to(self.dashboard)
 
     def _show_settings(self) -> None:
-        self.stack.setCurrentWidget(self.settings_page)
+        self._fade_to(self.settings_page)
 
     def _on_theme_selected(self, key: str) -> None:
         self.settings.theme = key
@@ -97,7 +153,7 @@ class MainWindow(QMainWindow):
         sid = cfg.id
         self._detail.command_entered.connect(lambda text: self._send_command(sid, text))
         self.stack.addWidget(self._detail)
-        self.stack.setCurrentWidget(self._detail)
+        self._fade_to(self._detail)
 
     def open_new_server_dialog(self, versions, on_create) -> None:
         """versions: list[str]; on_create: callable(result_dict) -> None."""

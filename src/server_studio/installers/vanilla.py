@@ -1,15 +1,11 @@
+# src/server_studio/installers/vanilla.py
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
+from server_studio.installers.base import InstallResult
+
 MANIFEST_URL = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"
-
-
-@dataclass
-class InstallResult:
-    jar_path: Path
-    java_major: int
 
 
 class VanillaInstaller:

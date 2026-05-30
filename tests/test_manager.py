@@ -25,6 +25,7 @@ class FakeProcess:
         self.cwd = cwd
         self.on_output = on_output
         self.started = False
+        self.sent = []
 
     def start(self):
         self.started = True
@@ -35,6 +36,9 @@ class FakeProcess:
 
     def stop(self, timeout=10.0):
         self.started = False
+
+    def send(self, command):
+        self.sent.append(command)
 
 
 def _make_manager(tmp_path):
@@ -102,5 +106,23 @@ def test_start_twice_raises(tmp_path):
     try:
         mgr.start_server(cfg.id, on_output=lambda _l: None)
         assert False, "expected RuntimeError on double start"
+    except RuntimeError:
+        pass
+
+
+def test_send_command_forwards_to_running_process(tmp_path):
+    mgr, created = _make_manager(tmp_path)
+    cfg = mgr.create_server(name="SMP", mc_version="1.20.6", loader="vanilla")
+    mgr.start_server(cfg.id, on_output=lambda _l: None)
+    mgr.send_command(cfg.id, "say hello")
+    assert created[-1].sent == ["say hello"]
+
+
+def test_send_command_when_not_running_raises(tmp_path):
+    mgr, _ = _make_manager(tmp_path)
+    cfg = mgr.create_server(name="SMP", mc_version="1.20.6", loader="vanilla")
+    try:
+        mgr.send_command(cfg.id, "say hi")
+        assert False, "expected RuntimeError"
     except RuntimeError:
         pass

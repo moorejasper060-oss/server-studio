@@ -94,3 +94,9 @@ class ServerManager:
         if proc:
             proc.stop()
             self._running.pop(server_id, None)
+
+    def send_command(self, server_id: str, command: str) -> None:
+        proc = self._running.get(server_id)
+        if proc is None:
+            raise RuntimeError(f"Server {server_id} is not running")
+        proc.send(command)

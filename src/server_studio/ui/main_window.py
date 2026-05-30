@@ -4,7 +4,7 @@ from __future__ import annotations
 import threading
 from typing import Callable
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, QThread
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget, QPushButton,
 )
@@ -40,6 +40,9 @@ class MainWindow(QMainWindow):
         self.settings = AppSettings.load(paths)
         self._detail: ServerDetail | None = None
         self._wizard = None
+        self._create_thread = None
+        self._create_worker = None
+        self._last_create_error = None
         self._console_bridge = _ConsoleBridge()
         self._console_bridge.line.connect(self._on_console_line)
         self._stop_bridge = _StopBridge()
@@ -91,6 +94,8 @@ class MainWindow(QMainWindow):
                                     loader=cfg.loader, running=self.manager.is_running(cfg.id))
         self._detail.back_requested.connect(self._show_dashboard)
         self._detail.toggle_requested.connect(self._toggle_server)
+        sid = cfg.id
+        self._detail.command_entered.connect(lambda text: self._send_command(sid, text))
         self.stack.addWidget(self._detail)
         self.stack.setCurrentWidget(self._detail)
 
@@ -114,12 +119,35 @@ class MainWindow(QMainWindow):
         versions = getattr(self, "_versions", ["1.21.4", "1.20.6", "1.20.4", "1.16.5"])
         self.open_new_server_dialog(versions, self._create_server)
 
+    def _send_command(self, server_id: str, text: str) -> None:
+        if self.manager.is_running(server_id):
+            self.manager.send_command(server_id, text)
+
     def _create_server(self, data: dict) -> None:
-        self.manager.create_server(
-            name=data["name"], mc_version=data["mc_version"],
+        from server_studio.ui.workers import CreateServerWorker
+        thread = QThread()
+        worker = CreateServerWorker(
+            self.manager, name=data["name"], mc_version=data["mc_version"],
             loader=data["loader"], ram_mb=data["ram_mb"],
         )
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(self._on_create_finished)
+        worker.failed.connect(self._on_create_failed)
+        worker.finished.connect(thread.quit)
+        worker.failed.connect(thread.quit)
+        thread.finished.connect(thread.deleteLater)
+        # keep references so the thread/worker aren't garbage-collected mid-run
+        self._create_thread = thread
+        self._create_worker = worker
+        thread.start()
+
+    def _on_create_finished(self, cfg) -> None:
         self.refresh()
+
+    def _on_create_failed(self, message: str) -> None:
+        # Surfaced to the user via a toast in the real app; stored for now.
+        self._last_create_error = message
 
     def _toggle_server(self, server_id: str) -> None:
         if self.manager.is_running(server_id):

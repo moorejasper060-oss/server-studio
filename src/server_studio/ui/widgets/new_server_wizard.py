@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QStackedWidget, QWidget, QLabel,
-    QPushButton, QComboBox, QLineEdit, QSlider,
+    QPushButton, QComboBox, QLineEdit, QSlider, QButtonGroup,
 )
 
 from server_studio.ui.loader_options import loader_options_for_version
@@ -17,6 +17,8 @@ class NewServerWizard(QDialog):
         self._version: str | None = None
         self._loader: str | None = None
         self.loader_buttons: dict[str, QPushButton] = {}
+        self._loader_group = QButtonGroup(self)
+        self._loader_group.setExclusive(True)
 
         root = QVBoxLayout(self)
         self.stack = QStackedWidget(self)
@@ -66,12 +68,15 @@ class NewServerWizard(QDialog):
 
     def _build_loader_step(self) -> None:
         for btn in self.loader_buttons.values():
+            self._loader_group.removeButton(btn)
             btn.setParent(None)
         self.loader_buttons.clear()
+        self._loader = None
         for opt in loader_options_for_version(self._version or ""):
             btn = QPushButton(f"{opt.label}  ({opt.kind})")
             btn.setCheckable(True)
             btn.clicked.connect(lambda _=False, k=opt.key: self.select_loader(k))
+            self._loader_group.addButton(btn)
             self._l1.addWidget(btn)
             self.loader_buttons[opt.key] = btn
 

@@ -88,3 +88,39 @@ def test_console_streams_from_worker_thread(qtbot, tmp_path):
     qtbot.waitUntil(
         lambda: "Threaded line!" in w._detail.console.log.toPlainText(), timeout=2000
     )
+
+
+def test_console_command_sent_to_manager(qtbot, tmp_path):
+    sent = []
+
+    class CmdManager(StreamingManager):
+        def send_command(self, sid, text):
+            sent.append((sid, text))
+
+    mgr = CmdManager([Cfg("a", "A", "1.20.6", "paper")])
+    w = _win(qtbot, tmp_path, mgr)
+    w._open_server("a")
+    w._toggle_server("a")  # start so it's running
+    w._detail.console.input.setText("say hi")
+    w._detail.console._submit()
+    assert sent == [("a", "say hi")]
+
+
+def test_create_server_runs_async_and_refreshes(qtbot, tmp_path):
+    class CreatingManager:
+        def __init__(self):
+            self._servers = []
+        def list_servers(self):
+            return self._servers
+        def is_running(self, sid):
+            return False
+        def create_server(self, name, mc_version, loader, ram_mb):
+            cfg = Cfg("new1", name, mc_version, loader)
+            self._servers.append(cfg)
+            return cfg
+
+    mgr = CreatingManager()
+    w = _win(qtbot, tmp_path, mgr)
+    assert w.dashboard.card_count() == 0
+    w._create_server({"name": "SMP", "mc_version": "1.20.6", "loader": "paper", "ram_mb": 2048})
+    qtbot.waitUntil(lambda: w.dashboard.card_count() == 1, timeout=3000)

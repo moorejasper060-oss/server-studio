@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 )
 
 from server_studio.installers.content_target import supports_content
+from server_studio.ui.widgets.backups_tab import BackupsTab
 from server_studio.ui.widgets.console_view import ConsoleView
 from server_studio.ui.widgets.mods_tab import ModsTab
 from server_studio.ui.widgets.sharing_tab import SharingTab
@@ -20,7 +21,8 @@ class ServerDetail(QWidget):
     command_entered = Signal(str)
 
     def __init__(self, *, server_id: str, name: str, version: str, loader: str,
-                 running: bool, content_service=None, sharing_service=None, parent=None):
+                 running: bool, content_service=None, sharing_service=None,
+                 backup_service=None, parent=None):
         super().__init__(parent)
         self._id = server_id
 
@@ -58,7 +60,12 @@ class ServerDetail(QWidget):
             self.tabs.addTab(self._placeholder("Mods browser arrives in a later update."), "Mods")
         self.tabs.addTab(self._placeholder("Server settings."), "Settings")
         self.tabs.addTab(self._placeholder("Connected players."), "Players")
-        self.tabs.addTab(self._placeholder("World backups arrive in a later update."), "Backups")
+        if backup_service is not None:
+            self.backups_tab = BackupsTab(service=backup_service)
+            self.tabs.addTab(self.backups_tab, "Backups")
+        else:
+            self.backups_tab = None
+            self.tabs.addTab(self._placeholder("World backups arrive in a later update."), "Backups")
         if sharing_service is not None:
             self.sharing_tab = SharingTab(service=sharing_service)
             self.tabs.addTab(self.sharing_tab, "Sharing")

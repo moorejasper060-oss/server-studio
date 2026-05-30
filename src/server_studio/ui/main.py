@@ -7,17 +7,18 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication
 
 from server_studio.paths import AppPaths
-from server_studio.app import build_server_manager, build_content_services, build_sharing_factory
+from server_studio.app import build_server_manager, build_content_services, build_sharing_factory, build_backup_factory
 from server_studio.ui.main_window import MainWindow
 from server_studio.ui.theme import qss
 
 
 def make_window(manager, paths: AppPaths, apply_theme,
-                content_manager=None, search_client=None, sharing_factory=None) -> MainWindow:
+                content_manager=None, search_client=None, sharing_factory=None,
+                backup_factory=None) -> MainWindow:
     """Build the MainWindow (extracted for testability)."""
     return MainWindow(manager=manager, paths=paths, apply_theme=apply_theme,
                       content_manager=content_manager, search_client=search_client,
-                      sharing_factory=sharing_factory)
+                      sharing_factory=sharing_factory, backup_factory=backup_factory)
 
 
 def _default_data_root() -> AppPaths:
@@ -31,13 +32,14 @@ def main() -> int:
     manager = build_server_manager(paths)
     search_client, content_manager = build_content_services(paths)
     sharing_factory = build_sharing_factory()
+    backup_factory = build_backup_factory(paths)
 
     def apply_theme(key: str) -> None:
         app.setStyleSheet(qss(key))
 
     win = make_window(manager=manager, paths=paths, apply_theme=apply_theme,
                       content_manager=content_manager, search_client=search_client,
-                      sharing_factory=sharing_factory)
+                      sharing_factory=sharing_factory, backup_factory=backup_factory)
     apply_theme(win.settings.theme)
     win.resize(1000, 680)
     win.show()

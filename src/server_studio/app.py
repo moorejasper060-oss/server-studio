@@ -38,6 +38,16 @@ def build_content_services(paths: AppPaths):
     return ModrinthClient(client=client), ContentManager(paths, downloader=downloader)
 
 
+def build_backup_factory(paths: AppPaths):
+    """Return make(server_id) -> BackupService."""
+    from server_studio.backup_manager import BackupManager
+    from server_studio.ui.backup_service import BackupService
+    bm = BackupManager(paths)
+    def make(server_id: str) -> BackupService:
+        return BackupService(server_id=server_id, backup_manager=bm)
+    return make
+
+
 def build_sharing_factory(bore_path: str = "bore"):
     """Return make(server_id, port) -> SharingService. Public IP resolved once at startup."""
     from pathlib import Path

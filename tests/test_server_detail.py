@@ -82,3 +82,24 @@ def test_sharing_tab_placeholder_without_service(qtbot):
     d = ServerDetail(server_id="a", name="N", version="1.20.6", loader="paper", running=False)
     qtbot.addWidget(d)
     assert d.sharing_tab is None
+
+
+class _FakeBackupService:
+    def create(self): return "b.zip"
+    def list(self): return []
+    def restore(self, name): pass
+    def delete(self, name): pass
+
+
+def test_backups_tab_real_when_service_provided(qtbot):
+    from server_studio.ui.widgets.backups_tab import BackupsTab
+    d = ServerDetail(server_id="a", name="N", version="1.20.6", loader="paper",
+                     running=False, backup_service=_FakeBackupService())
+    qtbot.addWidget(d)
+    assert isinstance(d.backups_tab, BackupsTab)
+
+
+def test_backups_tab_placeholder_without_service(qtbot):
+    d = ServerDetail(server_id="a", name="N", version="1.20.6", loader="paper", running=False)
+    qtbot.addWidget(d)
+    assert d.backups_tab is None

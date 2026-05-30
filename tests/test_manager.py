@@ -49,7 +49,7 @@ def _make_manager(tmp_path):
 
     mgr = ServerManager(
         paths=paths,
-        installer=FakeInstaller(),
+        installer_for=lambda loader: FakeInstaller(),
         process_factory=factory,
         java_resolver=lambda major: Path(f"/java/{major}/bin/java"),
     )
@@ -82,6 +82,7 @@ def test_start_uses_java_and_ram_flags(tmp_path):
     assert proc.started is True
     assert str(Path("/java/21/bin/java")) in proc.command
     assert "-Xmx3072M" in proc.command
+    assert "-Xms1024M" in proc.command
     assert "nogui" in proc.command
 
 
@@ -92,3 +93,14 @@ def test_stop_marks_not_running(tmp_path):
     assert mgr.is_running(cfg.id) is True
     mgr.stop_server(cfg.id)
     assert mgr.is_running(cfg.id) is False
+
+
+def test_start_twice_raises(tmp_path):
+    mgr, _ = _make_manager(tmp_path)
+    cfg = mgr.create_server(name="SMP", mc_version="1.20.6", loader="vanilla")
+    mgr.start_server(cfg.id, on_output=lambda _l: None)
+    try:
+        mgr.start_server(cfg.id, on_output=lambda _l: None)
+        assert False, "expected RuntimeError on double start"
+    except RuntimeError:
+        pass

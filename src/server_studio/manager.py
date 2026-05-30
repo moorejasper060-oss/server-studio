@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable
 
 from server_studio.config import ServerConfig
+from server_studio.installers.base import Installer
 from server_studio.paths import AppPaths
 
 
@@ -18,10 +19,10 @@ class ServerManager:
       - java_resolver: (java_major: int) -> Path to the java executable
     """
 
-    def __init__(self, paths: AppPaths, installer, process_factory: Callable,
-                 java_resolver: Callable[[int], Path]):
+    def __init__(self, paths: AppPaths, installer_for: Callable[[str], "Installer"],
+                 process_factory: Callable, java_resolver: Callable[[int], Path]):
         self.paths = paths
-        self._installer = installer
+        self._installer_for = installer_for
         self._process_factory = process_factory
         self._java_resolver = java_resolver
         self._running: dict[str, object] = {}
@@ -32,7 +33,8 @@ class ServerManager:
         server_dir = self.paths.server_dir(server_id)
         server_dir.mkdir(parents=True, exist_ok=True)
 
-        result = self._installer.install(mc_version, server_dir / "server.jar")
+        installer = self._installer_for(loader)
+        result = installer.install(mc_version, server_dir / "server.jar")
         (server_dir / "eula.txt").write_text("eula=true\n", encoding="utf-8")
 
         cfg = ServerConfig(
@@ -65,6 +67,8 @@ class ServerManager:
         return int(runtime.split("-")[-1])
 
     def start_server(self, server_id: str, on_output: Callable[[str], None]) -> None:
+        if self.is_running(server_id):
+            raise RuntimeError(f"Server {server_id} is already running")
         cfg = self.get(server_id)
         server_dir = self.paths.server_dir(server_id)
         java = self._java_resolver(self._java_major(cfg))

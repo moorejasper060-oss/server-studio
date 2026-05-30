@@ -38,3 +38,14 @@ def test_share_button_toggles_off(qtbot):
     w.share_btn.click()   # start
     w.share_btn.click()   # stop
     assert svc.calls == ["start", "stop"]
+
+
+def test_tunnel_start_error_notifies(qtbot):
+    class BoomService(FakeService):
+        def start_tunnel(self, on_address):
+            raise RuntimeError("bore not found")
+    msgs = []
+    w = SharingTab(service=BoomService(), notify=msgs.append)
+    qtbot.addWidget(w)
+    w.share_btn.click()
+    assert any("bore not found" in m for m in msgs)

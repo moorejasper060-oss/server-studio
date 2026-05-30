@@ -22,10 +22,15 @@ class Toast(QLabel):
         self._hide_timer.setSingleShot(True)
         self._hide_timer.timeout.connect(self._fade_out)
 
+        self._final_hide = QTimer(self)
+        self._final_hide.setSingleShot(True)
+        self._final_hide.timeout.connect(self.hide)
+
         self._anim = QPropertyAnimation(self._effect, b"opacity", self)
         self._anim.setDuration(180)
 
     def show_message(self, text: str, duration_ms: int = 4000) -> None:
+        self._final_hide.stop()
         self.setText(text)
         self.adjustSize()
         if self.parent() is not None:
@@ -43,7 +48,7 @@ class Toast(QLabel):
 
     def _fade_out(self) -> None:
         self._fade_to(0.0)
-        QTimer.singleShot(220, self.hide)
+        self._final_hide.start(220)
 
     def _reposition(self) -> None:
         parent = self.parent()

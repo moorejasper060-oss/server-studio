@@ -9,9 +9,10 @@ class SharingTab(QWidget):
 
     address_received = Signal(str)
 
-    def __init__(self, service, parent=None):
+    def __init__(self, service, notify=None, parent=None):
         super().__init__(parent)
         self._service = service
+        self._notify = notify or (lambda _m: None)
 
         layout = QVBoxLayout(self)
 
@@ -46,7 +47,10 @@ class SharingTab(QWidget):
         if self._service.tunnel_active():
             self._service.stop_tunnel()
         else:
-            self._service.start_tunnel(self.address_received.emit)
+            try:
+                self._service.start_tunnel(self.address_received.emit)
+            except Exception as exc:
+                self._notify(f"Couldn't start tunnel: {exc}")
         self._sync()
 
     def _on_address(self, address: str) -> None:

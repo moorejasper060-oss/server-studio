@@ -68,7 +68,7 @@ class ServerDetail(QWidget):
             self.backups_tab = None
             self.tabs.addTab(self._placeholder("World backups arrive in a later update."), "Backups")
         if sharing_service is not None:
-            self.sharing_tab = SharingTab(service=sharing_service)
+            self.sharing_tab = SharingTab(service=sharing_service, notify=notify)
             self.tabs.addTab(self.sharing_tab, "Sharing")
         else:
             self.sharing_tab = None

@@ -13,7 +13,8 @@ class ServerManager:
     """Façade for creating and controlling servers.
 
     Dependencies are injected so the core stays testable offline:
-      - installer: object with install(mc_version, dest) -> result(.java_major)
+      - installer_for: (loader: str) -> installer with
+        install(mc_version, dest) -> result(.java_major)
       - process_factory: (command, cwd, on_output) -> process object
         (start(), stop(), is_running())
       - java_resolver: (java_major: int) -> Path to the java executable

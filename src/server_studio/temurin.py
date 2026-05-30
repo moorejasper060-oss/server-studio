@@ -41,9 +41,9 @@ def extract_runtime(archive_bytes: bytes, dest_dir: Path, suffix: str) -> None:
                 zf.extractall(staging)
         else:  # .tar.gz
             with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz") as tf:
-                tf.extractall(staging)
+                tf.extractall(staging, filter="data")
 
-        tops = [p for p in staging.iterdir()]
+        tops = list(staging.iterdir())
         root = tops[0] if len(tops) == 1 and tops[0].is_dir() else staging
         for item in root.iterdir():
             target = dest_dir / item.name

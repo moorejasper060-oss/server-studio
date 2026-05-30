@@ -12,6 +12,13 @@ METADATA = "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-me
 MAVEN = "https://maven.neoforged.net/releases/net/neoforged/neoforge"
 
 
+def _build_number(version: str) -> int:
+    """Trailing build number of a NeoForge version, ignoring any -beta/-rc suffix."""
+    last = version.rsplit(".", 1)[-1]    # "236" or "0-beta"
+    head = last.split("-", 1)[0]          # "236" or "0"
+    return int(head) if head.isdigit() else -1
+
+
 def neoforge_prefix(mc_version: str) -> str:
     """MC 1.X.Y -> NeoForge version prefix 'X.Y' (patch defaults to 0)."""
     parts = mc_version.split(".")
@@ -37,7 +44,8 @@ class NeoForgeInstaller:
         matching = [v for v in versions if v.startswith(prefix)]
         if not matching:
             raise ValueError(f"No NeoForge build for Minecraft {mc_version}")
-        return max(matching, key=lambda v: int(v.rsplit(".", 1)[-1]))
+        stable = [v for v in matching if "-" not in v.rsplit(".", 1)[-1]]
+        return max(stable or matching, key=_build_number)
 
     def install(self, mc_version: str, dest: Path) -> InstallResult:
         version = self._neoforge_version(mc_version)

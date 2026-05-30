@@ -13,3 +13,10 @@ later plans.
 python -m pip install -e ".[dev]"
 python -m pytest
 ```
+
+## Running the app
+```
+python -m pip install -e ".[dev]"
+python -m server_studio.ui.main
+```
+The window opens with the dashboard. Create a server with **+ New Server**, then Start it to stream its console live. Switch accent themes under the ⚙ Settings page.

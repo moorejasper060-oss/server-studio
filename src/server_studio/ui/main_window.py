@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Callable
 
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget, QPushButton,
 )
@@ -12,6 +13,11 @@ from server_studio.ui.settings_store import AppSettings
 from server_studio.ui.widgets.dashboard import Dashboard
 from server_studio.ui.widgets.settings_page import SettingsPage
 from server_studio.ui.widgets.server_detail import ServerDetail
+
+
+class _ConsoleBridge(QObject):
+    """Marshals server stdout (emitted from ServerProcess's reader thread) onto the UI thread."""
+    line = Signal(str)
 
 
 class MainWindow(QMainWindow):
@@ -24,6 +30,9 @@ class MainWindow(QMainWindow):
         self._apply_theme = apply_theme
         self.settings = AppSettings.load(paths)
         self._detail: ServerDetail | None = None
+        self._wizard = None
+        self._console_bridge = _ConsoleBridge()
+        self._console_bridge.line.connect(self._on_console_line)
 
         central = QWidget(); root = QHBoxLayout(central)
 
@@ -37,6 +46,7 @@ class MainWindow(QMainWindow):
         self.dashboard = Dashboard()
         self.dashboard.open_requested.connect(self._open_server)
         self.dashboard.new_requested.connect(self._start_new_server)
+        self.dashboard.toggle_requested.connect(self._toggle_server)
         self.settings_page = SettingsPage(current=self.settings.theme)
         self.settings_page.theme_selected.connect(self._on_theme_selected)
         self.stack.addWidget(self.dashboard)
@@ -69,6 +79,7 @@ class MainWindow(QMainWindow):
         self._detail = ServerDetail(server_id=cfg.id, name=cfg.name, version=cfg.mc_version,
                                     loader=cfg.loader, running=self.manager.is_running(cfg.id))
         self._detail.back_requested.connect(self._show_dashboard)
+        self._detail.toggle_requested.connect(self._toggle_server)
         self.stack.addWidget(self._detail)
         self.stack.setCurrentWidget(self._detail)
 
@@ -98,3 +109,17 @@ class MainWindow(QMainWindow):
             loader=data["loader"], ram_mb=data["ram_mb"],
         )
         self.refresh()
+
+    def _toggle_server(self, server_id: str) -> None:
+        if self.manager.is_running(server_id):
+            self.manager.stop_server(server_id)
+        else:
+            self.manager.start_server(server_id, on_output=self._console_bridge.line.emit)
+        running = self.manager.is_running(server_id)
+        self.refresh()
+        if self._detail is not None and self._detail._id == server_id:
+            self._detail.set_status(running)
+
+    def _on_console_line(self, text: str) -> None:
+        if self._detail is not None:
+            self._detail.append_console_line(text)

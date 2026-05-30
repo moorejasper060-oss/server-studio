@@ -48,6 +48,17 @@ def build_backup_factory(paths: AppPaths):
     return make
 
 
+def build_version_list() -> list[str]:
+    """Fetch the release version list once (fallback to a static list on failure)."""
+    from server_studio.installers.version_list import list_release_versions, DEFAULT_VERSIONS
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            versions = list_release_versions(client)
+        return versions or DEFAULT_VERSIONS
+    except Exception:
+        return DEFAULT_VERSIONS
+
+
 def build_sharing_factory(bore_path: str = "bore"):
     """Return make(server_id, port) -> SharingService. Public IP resolved once at startup."""
     from pathlib import Path

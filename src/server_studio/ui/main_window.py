@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget, QPushButton,
 )
 
+from server_studio.installers.version_list import DEFAULT_VERSIONS
 from server_studio.paths import AppPaths
 from server_studio.ui.async_runner import run_sync
 from server_studio.ui.settings_store import AppSettings
@@ -36,10 +37,11 @@ class _StopBridge(QObject):
 
 class MainWindow(QMainWindow):
     def __init__(self, manager, paths: AppPaths, apply_theme: Callable[[str], None],
-                 content_manager=None, search_client=None, sharing_factory=None,
+                 versions=None, content_manager=None, search_client=None, sharing_factory=None,
                  backup_factory=None, task_runner=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Server Studio")
+        self._versions = versions or DEFAULT_VERSIONS
         self.manager = manager
         self.paths = paths
         self._apply_theme = apply_theme
@@ -63,7 +65,9 @@ class MainWindow(QMainWindow):
 
         rail = QVBoxLayout()
         self.nav_dash = QPushButton("▤"); self.nav_dash.clicked.connect(self._show_dashboard)
+        self.nav_dash.setToolTip("Dashboard")
         self.nav_settings = QPushButton("⚙"); self.nav_settings.clicked.connect(self._show_settings)
+        self.nav_settings.setToolTip("Settings")
         rail.addWidget(self.nav_dash); rail.addStretch(1); rail.addWidget(self.nav_settings)
         root.addLayout(rail)
 
@@ -206,7 +210,7 @@ class MainWindow(QMainWindow):
             dlg.accept()
 
     def _start_new_server(self) -> None:
-        versions = getattr(self, "_versions", ["1.21.4", "1.20.6", "1.20.4", "1.16.5"])
+        versions = self._versions
         self.open_new_server_dialog(versions, self._create_server)
 
     def _send_command(self, server_id: str, text: str) -> None:

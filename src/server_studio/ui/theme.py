@@ -46,10 +46,16 @@ def qss(theme_key: str) -> str:
                     padding: 2px 9px; }}
     QPushButton {{ background: {c['panel2']}; color: {c['text']};
                    border: 1px solid {c['line']}; border-radius: 9px; padding: 8px 14px; }}
+    QPushButton:hover {{ background: #1e2820; border-color: {c['muted']}; }}
+    QPushButton:pressed {{ background: #0d1310; padding-top: 9px; padding-bottom: 7px; }}
     QPushButton#Accent {{ background: {c['accent']}; color: {c['bg']};
                           border: none; font-weight: 700; }}
+    QPushButton#Accent:hover {{ background: {c['glow']}; }}
+    QPushButton#Accent:pressed {{ background: {c['accent_border']}; padding-top: 9px; padding-bottom: 7px; }}
     QPushButton#AccentGhost {{ background: {c['accent_dim']}; color: {c['accent']};
                                border: 1px solid {c['accent_border']}; }}
+    QPushButton#AccentGhost:hover {{ background: {c['accent_dim']}; border-color: {c['accent']}; color: {c['glow']}; }}
+    QPushButton#AccentGhost:pressed {{ background: {c['bg']}; padding-top: 9px; padding-bottom: 7px; }}
     QPlainTextEdit#Console {{ background: #070a08; border: 1px solid #16201a;
                               border-radius: 10px; font-family: Consolas, monospace;
                               font-size: 12px; }}
